@@ -85,7 +85,7 @@ Converting .GLTF to Polydata
 def Prepre_for_vucuum_forming(teeth_original_filename,Euler_angles_vec):
 
     filled_teeth_unclean= fill_teeth(teeth_original_filename)
-    teeth_filled_filename='STL/save_only_for_read_agin.stl'
+    teeth_filled_filename="STL'S/save_only_for_read_agin.stl"
     filled_teeth_unclean.save(teeth_filled_filename)
     #<------------------------------------------Stl to PCD (original)----------------------------------------------------------------->
     meshes_original = np.array(mesh.Mesh.from_file(teeth_original_filename))
@@ -100,7 +100,7 @@ def Prepre_for_vucuum_forming(teeth_original_filename,Euler_angles_vec):
     pcd_original = o3d.geometry.PointCloud()
     points_original = (clean_pcd(points_original))
     pcd_original.points = o3d.utility.Vector3dVector(points_original)
-    filled_teeth_unclean='STL/filled_teeth_unclean.stl'
+    filled_teeth_unclean="STL'S/filled_teeth_unclean.stl"
     meshes_filled = np.array(mesh.Mesh.from_file(filled_teeth_unclean))
     #<------------------------------------------Stl to PCD (filled teeth and unclean)----------------------------------------------------------------->
     points_filled = meshes_filled.reshape(len(meshes_filled) * 3, 3)  # point_cloud
@@ -147,8 +147,8 @@ def Prepre_for_vucuum_forming(teeth_original_filename,Euler_angles_vec):
     vertices_to_remove = densities < np.quantile(densities, density)
     mesh_cleaned.remove_vertices_by_mask(vertices_to_remove)
     mesh_cleaned.compute_triangle_normals()
-    o3d.io.write_triangle_mesh('STL/gum_not_filled.stl',mesh_cleaned)
-    teeth_gum_filled = pv.read('STL/gum_not_filled.stl')
+    o3d.io.write_triangle_mesh("STL'S/gum_not_filled.stl'",mesh_cleaned)
+    teeth_gum_filled = pv.read("STL'S/gum_not_filled.stl")
     teeth_gum_filled = mf.MeshFix(teeth_gum_filled)
     teeth_gum_filled.repair(verbose=False, joincomp=False, remove_smallest_components=True)
     points_ = teeth_gum_filled.points()
@@ -195,8 +195,8 @@ Stages:
     -------
     full teeth on a box-plate (PolyData file) . for saving file : teeth.save("teeth.stl")
 """
-Euler_angles_vec=np.array([1, 2, 3])
-Prepre_for_vucuum_forming('STL/to_print.stl',Euler_angles_vec)
+Euler_angles_vec=np.array([1, 2, 5])
+Prepre_for_vucuum_forming("STL'S/to_print.stl",Euler_angles_vec)
 
 
 
