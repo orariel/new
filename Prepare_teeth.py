@@ -4,6 +4,7 @@ import open3d as o3d
 import pymeshfix as mf
 import pyvista as pv
 from stl import mesh
+from open3d.geometry import PointCloud
 import alphashape
 from shapely.geometry import Point
 
@@ -100,8 +101,7 @@ def Prepre_for_vucuum_forming(teeth_original_filename,Euler_angles_vec):
     pcd_original = o3d.geometry.PointCloud()
     points_original = (clean_pcd(points_original))
     pcd_original.points = o3d.utility.Vector3dVector(points_original)
-    filled_teeth_unclean="STL'S/filled_teeth_unclean.stl"
-    meshes_filled = np.array(mesh.Mesh.from_file(filled_teeth_unclean))
+    meshes_filled = np.array(mesh.Mesh.from_file("STL'S/save_only_for_read_agin.stl"))
     #<------------------------------------------Stl to PCD (filled teeth and unclean)----------------------------------------------------------------->
     points_filled = meshes_filled.reshape(len(meshes_filled) * 3, 3)  # point_cloud
     indexes_filled = np.array([x for x in range(len(points_filled))]).reshape(len(meshes_filled), 3)
@@ -147,16 +147,14 @@ def Prepre_for_vucuum_forming(teeth_original_filename,Euler_angles_vec):
     vertices_to_remove = densities < np.quantile(densities, density)
     mesh_cleaned.remove_vertices_by_mask(vertices_to_remove)
     mesh_cleaned.compute_triangle_normals()
-    o3d.io.write_triangle_mesh("STL'S/gum_not_filled.stl'",mesh_cleaned)
+    o3d.io.write_triangle_mesh("STL'S/gum_not_filled.stl",mesh_cleaned)
     teeth_gum_filled = pv.read("STL'S/gum_not_filled.stl")
     teeth_gum_filled = mf.MeshFix(teeth_gum_filled)
     teeth_gum_filled.repair(verbose=False, joincomp=False, remove_smallest_components=True)
     points_ = teeth_gum_filled.points()
     faces_= teeth_gum_filled.faces()
     teeth_gum_filled = pv.make_tri_mesh(points_, faces_)
-
-    #<------------------------------------------Create box to align  the teeth for Vuucum forming----------------------------------------------------------------->
-
+    #<------------------------------------------merge ----------------------------------------------------------------->
     axes = pv.Axes()
     axes.origin = (0.0, 0.0, 0.0)
     teeth_gum_filled.rotate_x(Euler_angles_vec[0], point=axes.origin)
@@ -171,8 +169,9 @@ def Prepre_for_vucuum_forming(teeth_original_filename,Euler_angles_vec):
     results = b_box.merge(teeth_gum_filled)
     p1.add_mesh(results)
     p1.show()
-    results.save('STL/vacuum_forming_N.stl')#Saving command
+    results.save("STL'S/vacuum_forming_N.stl")#Saving command
     return teeth_gum_filled
+
 """"
 The function add gum to the filled and unclean stl.
 Stages:
@@ -195,7 +194,7 @@ Stages:
     -------
     full teeth on a box-plate (PolyData file) . for saving file : teeth.save("teeth.stl")
 """
-Euler_angles_vec=np.array([1, 2, 5])
+Euler_angles_vec=np.array([5, 0,0])
 Prepre_for_vucuum_forming("STL'S/to_print.stl",Euler_angles_vec)
 
 
