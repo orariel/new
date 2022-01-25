@@ -4,7 +4,6 @@ import open3d as o3d
 import pymeshfix as mf
 import pyvista as pv
 from stl import mesh
-from open3d.geometry import PointCloud
 import alphashape
 from shapely.geometry import Point
 
@@ -86,7 +85,7 @@ Converting .GLTF to Polydata
 def Prepre_for_vucuum_forming(teeth_original_filename,Euler_angles_vec):
 
     filled_teeth_unclean= fill_teeth(teeth_original_filename)
-    teeth_filled_filename="STL'S/save_only_for_read_agin.stl"
+    teeth_filled_filename="STLS/save_only_for_read_agin.stl"
     filled_teeth_unclean.save(teeth_filled_filename)
     #<------------------------------------------Stl to PCD (original)----------------------------------------------------------------->
     meshes_original = np.array(mesh.Mesh.from_file(teeth_original_filename))
@@ -101,7 +100,7 @@ def Prepre_for_vucuum_forming(teeth_original_filename,Euler_angles_vec):
     pcd_original = o3d.geometry.PointCloud()
     points_original = (clean_pcd(points_original))
     pcd_original.points = o3d.utility.Vector3dVector(points_original)
-    meshes_filled = np.array(mesh.Mesh.from_file("STL'S/save_only_for_read_agin.stl"))
+    meshes_filled = np.array(mesh.Mesh.from_file("STLS/save_only_for_read_agin.stl"))
     #<------------------------------------------Stl to PCD (filled teeth and unclean)----------------------------------------------------------------->
     points_filled = meshes_filled.reshape(len(meshes_filled) * 3, 3)  # point_cloud
     indexes_filled = np.array([x for x in range(len(points_filled))]).reshape(len(meshes_filled), 3)
@@ -147,29 +146,30 @@ def Prepre_for_vucuum_forming(teeth_original_filename,Euler_angles_vec):
     vertices_to_remove = densities < np.quantile(densities, density)
     mesh_cleaned.remove_vertices_by_mask(vertices_to_remove)
     mesh_cleaned.compute_triangle_normals()
-    o3d.io.write_triangle_mesh("STL'S/gum_not_filled.stl",mesh_cleaned)
-    teeth_gum_filled = pv.read("STL'S/gum_not_filled.stl")
+    o3d.io.write_triangle_mesh("STLS/gum_not_filled.stl",mesh_cleaned)
+    teeth_gum_filled = pv.read("STLS/gum_not_filled.stl")
     teeth_gum_filled = mf.MeshFix(teeth_gum_filled)
     teeth_gum_filled.repair(verbose=False, joincomp=False, remove_smallest_components=True)
-    points_ = teeth_gum_filled.points()
-    faces_= teeth_gum_filled.faces()
-    teeth_gum_filled = pv.make_tri_mesh(points_, faces_)
-    #<------------------------------------------merge ----------------------------------------------------------------->
-    axes = pv.Axes()
-    axes.origin = (0.0, 0.0, 0.0)
-    teeth_gum_filled.rotate_x(Euler_angles_vec[0], point=axes.origin)
-    teeth_gum_filled.rotate_y(Euler_angles_vec[1], point=axes.origin)
-    teeth_gum_filled.rotate_z(Euler_angles_vec[2], point=axes.origin)
-    box_cor = np.asarray(teeth_gum_filled.bounds)
-    b_box = pv.Box(bounds=box_cor, level=0)
-    b_box.translate((0, 0,box_cor[3]-2)) #The distance between the box and the teeth
-    b_box.save('b_box.stl')
-    b_box=pv.read('b_box.stl')
-    p1 = pv.Plotter()
-    results = b_box.merge(teeth_gum_filled)
-    p1.add_mesh(results)
-    p1.show()
-    results.save("STL'S/vacuum_forming_N.stl")#Saving command
+    teeth_gum_filled.save("STLS/gum_filled.stl")
+#     points_ = teeth_gum_filled.points()
+#     faces_= teeth_gum_filled.faces()
+#     teeth_gum_filled = pv.make_tri_mesh(points_, faces_)
+    #<------------------------------------------Clip & Extrude----------------------------------------------------------------->
+    teeth_gum_filled=pv.read('STLS/gum_filled.stl')
+    teeth_gum_filled.plot()
+    teeth_gum_filled.rotate_x(Euler_angles_vec[0]+180,inplace=True)
+    teeth_gum_filled.rotate_y(Euler_angles_vec[1],inplace=True)
+    teeth_gum_filled.rotate_z(Euler_angles_vec[2],inplace=True)
+    teeth_gum_filled.plot()
+    teeth_gum_filled=teeth_gum_filled.decimate(0.8) # remesh to Reduce file size
+    teeth_gum_filled= teeth_gum_filled.clip((0,0,-1),value=3.9)  # clip gum
+    teeth_gum_filled.plot()
+    teeth_gum_filled=teeth_gum_filled.extrude([0,0,25], capping=True)  # extrude gum
+    teeth_gum_filled.plot()
+    teeth_gum_filled=teeth_gum_filled.clip((0,0,-1),value=7) #clip agin
+    teeth_gum_filled.plot()
+    teeth_gum_filled=teeth_gum_filled.smooth(200) # smoothing
+    teeth_gum_filled.save('VF_v2.stl')
     return teeth_gum_filled
 
 """"
@@ -180,7 +180,7 @@ Stages:
 3.Check if every point(X,Y) from PCD_filled is in the boundary of PCD_original
 4.Convert to mesh using poisson method
 5.Filled the remains holes.
-6. Create a boundary box for the base of the platte and concatenate the SLT's
+6.Create height to the model
  input: path to the hollow teeth.stl
 
     Parameters
@@ -194,8 +194,8 @@ Stages:
     -------
     full teeth on a box-plate (PolyData file) . for saving file : teeth.save("teeth.stl")
 """
-Euler_angles_vec=np.array([5, 0,0])
-Prepre_for_vucuum_forming("STL'S/to_print.stl",Euler_angles_vec)
+Euler_angles_vec=np.array([10,0,0])
+Prepre_for_vucuum_forming("STLS/to_print.stl",Euler_angles_vec)
 
 
 
